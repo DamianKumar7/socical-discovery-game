@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: gamedb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  game-management:
+    build:
+      context: ./game-management
+      dockerfile: Dockerfile
+    container_name: game-management
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gamedb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "8081:8081"
+      - "5005:5005"
+    depends_on:
+      - postgres
+
+  user-management:
+    build:
+      context: ./user-management
+      dockerfile: Dockerfile
+    container_name: user-management
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gamedb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "8082:8082"
+      - "5006:5005"
+    depends_on:
+      - postgres
+  authentication:
+    build:
+      context: ./authentication
+      dockerfile: Dockerfile
+    container_name: authentication
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gamedb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "8083:8083"
+      - "5007:5005"
+    depends_on:
+      - postgres
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - game-management
+      - user-management
+      - authentication
+
+volumes:
+  postgres_data:
+    driver: local

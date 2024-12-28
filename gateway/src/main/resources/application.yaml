@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes:
+        # Authentication verification route should be first
+        - id: auth-verification
+          uri: http://authentication:8083   # authentication service URL
+          predicates:
+            - Path=/games/**, /user-data/**, /user-action/**
+          filters:
+            - RewritePath=(?<path>.*), /auth/verify
+            - AddRequestHeader=Original-Path, ${path}
+
+        # Route for Game Management Microservice
+        - id: game-management-service
+          uri: http://game-management:8081
+          predicates:
+            - Path=/games/**
+
+        # Route for User Data Microservice
+        - id: user-data-service
+          uri: http://user-management:8082
+          predicates:
+            - Path=/user-data/**
+
+        # Route for User Action Microservice
+        - id: user-action-service
+          uri: http://user-management:8082
+          predicates:
+            - Path=/user-action/**
+
+        # Route for Authentication Microservice (should be last)
+        - id: authentication-service
+          uri: http://authentication:8083
+          predicates:
+            - Path=/auth/**
